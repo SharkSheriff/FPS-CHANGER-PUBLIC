@@ -1,0 +1,97 @@
+-- Variables
+local fpstext = "type ur shit ere"
+local backtrack = 0
+local remote = game:GetService("ReplicatedStorage"):WaitForChild("FPSUpdateEventIKnowYouReCheater")
+local guiVisible = false  -- Variable to track GUI visibility
+
+-- Create the GUI and make it persistent by parenting to CoreGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "FancyFPSGui"
+ScreenGui.ResetOnSpawn = false  -- This prevents the GUI from resetting on respawn
+ScreenGui.Parent = game:GetService("CoreGui")  -- CoreGui ensures it stays on screen even after reset
+
+-- Main GUI Elements
+local MainFrame = Instance.new("Frame")
+local TextBox = Instance.new("TextBox")
+local TextLabel = Instance.new("TextLabel")
+local UICorner = Instance.new("UICorner")
+local ToggleButton = Instance.new("TextButton")
+
+-- ToggleButton setup (larger and at the bottom left of the screen)
+ToggleButton.Parent = ScreenGui
+ToggleButton.Size = UDim2.new(0, 100, 0, 40)  -- Increased size for better visibility
+ToggleButton.Position = UDim2.new(0, 10, 1, -50)
+ToggleButton.Text = "Open GUI"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Font = Enum.Font.SourceSansBold
+ToggleButton.TextSize = 18  -- Increased font size
+ToggleButton.BorderSizePixel = 0
+
+-- MainFrame setup (container box for the TextBox and TextLabel, initially hidden)
+MainFrame.Parent = ScreenGui
+MainFrame.Size = UDim2.new(0, 220, 0, 80)
+MainFrame.Position = UDim2.new(0.5, -110, 0.5, -40)
+MainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+MainFrame.BorderSizePixel = 0
+MainFrame.Draggable = true
+MainFrame.Active = true
+MainFrame.Selectable = true
+MainFrame.Visible = false  -- Start with GUI hidden
+
+-- Add rounded corners to MainFrame
+UICorner.Parent = MainFrame
+UICorner.CornerRadius = UDim.new(0, 12)
+
+-- TextBox setup (centered in the upper part of MainFrame)
+TextBox.Parent = MainFrame
+TextBox.Size = UDim2.new(1, -20, 0, 40)
+TextBox.Position = UDim2.new(0, 10, 0, 10)
+TextBox.PlaceholderText = "type ur shit ere"
+TextBox.Text = ""
+TextBox.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextBox.Font = Enum.Font.SourceSansBold
+TextBox.TextSize = 16
+
+-- TextLabel setup (smaller with black background for credits)
+TextLabel.Parent = MainFrame
+TextLabel.Size = UDim2.new(1, -20, 0, 15)
+TextLabel.Position = UDim2.new(0, 10, 0, 55)
+TextLabel.Text = "credits to Pogchamp and whoknowslol_"
+TextLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextLabel.Font = Enum.Font.SourceSans
+TextLabel.TextSize = 12
+
+-- RGB color cycling effect for MainFrame background, TextLabel text, and ToggleButton background
+local hue = 0
+game:GetService("RunService").RenderStepped:Connect(function()
+    hue = (hue + 0.01) % 1
+    local color = Color3.fromHSV(hue, 0.8, 1)
+    MainFrame.BackgroundColor3 = color
+    TextLabel.TextColor3 = color
+    ToggleButton.BackgroundColor3 = color  -- Apply RGB effect to ToggleButton background
+end)
+
+-- Toggle Button functionality to show/hide the MainFrame
+ToggleButton.MouseButton1Click:Connect(function()
+    guiVisible = not guiVisible
+    MainFrame.Visible = guiVisible
+    ToggleButton.Text = guiVisible and "Close GUI" or "Open GUI"
+end)
+
+-- Update fpstext as the user types and send to the server
+TextBox:GetPropertyChangedSignal("Text"):Connect(function()
+    fpstext = TextBox.Text
+    remote:FireServer(fpstext)
+end)
+
+-- Fire server periodically with current fpstext
+if _G.FPSConn then _G.FPSConn:Disconnect() end
+_G.FPSConn = game:GetService("RunService").RenderStepped:Connect(function()
+    local now = tick()
+    if now - backtrack >= 0.01 then
+        remote:FireServer(fpstext)
+        backtrack = now
+    end
+end)
